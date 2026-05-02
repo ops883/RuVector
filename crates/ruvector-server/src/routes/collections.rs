@@ -2,7 +2,7 @@
 
 use crate::{error::Error, state::AppState, Result};
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::StatusCode,
     response::IntoResponse,
     routing::{get, post},
@@ -41,6 +41,13 @@ pub struct CollectionsList {
     pub collections: Vec<String>,
 }
 
+/// Query parameters for listing collections
+#[derive(Debug, Deserialize)]
+pub struct ListCollectionsParams {
+    /// Optional prefix filter — only collections whose names start with this value are returned
+    pub prefix: Option<String>,
+}
+
 /// Create collection routes
 pub fn routes() -> Router<AppState> {
     Router::new()
@@ -77,11 +84,18 @@ async fn create_collection(
     Ok((StatusCode::CREATED, Json(info)))
 }
 
-/// List all collections
+/// List all collections, optionally filtered by a name prefix
 ///
 /// GET /collections
-async fn list_collections(State(state): State<AppState>) -> Result<impl IntoResponse> {
-    let collections = state.collection_names();
+/// GET /collections?prefix=prod
+async fn list_collections(
+    State(state): State<AppState>,
+    Query(params): Query<ListCollectionsParams>,
+) -> Result<impl IntoResponse> {
+    let collections = match params.prefix.as_deref() {
+        Some(p) if !p.is_empty() => state.collection_names_by_prefix(p),
+        _ => state.collection_names(),
+    };
     Ok(Json(CollectionsList { collections }))
 }
 

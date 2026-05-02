@@ -559,6 +559,19 @@ impl CollectionManager {
         manager.list_collections()
     }
 
+    /// List collections whose names start with `prefix`
+    ///
+    /// # Arguments
+    /// * `prefix` - Name prefix to filter by
+    ///
+    /// # Returns
+    /// Array of matching collection names
+    #[wasm_bindgen(js_name = listCollectionsByPrefix)]
+    pub fn list_collections_by_prefix(&self, prefix: &str) -> Vec<String> {
+        let manager = self.inner.lock();
+        manager.names_by_prefix(prefix)
+    }
+
     /// Delete a collection
     ///
     /// # Arguments

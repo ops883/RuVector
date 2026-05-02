@@ -180,6 +180,15 @@ impl CollectionManager {
             .collect()
     }
 
+    /// List collection names whose names start with `prefix`
+    pub fn names_by_prefix(&self, prefix: &str) -> Vec<String> {
+        self.collections
+            .iter()
+            .filter(|entry| entry.key().starts_with(prefix))
+            .map(|entry| entry.key().clone())
+            .collect()
+    }
+
     /// Check if a collection exists
     ///
     /// # Arguments
@@ -883,6 +892,59 @@ mod tests {
     }
 
     // ===== Full lifecycle: create, alias, switch, delete =====
+
+    #[test]
+    fn test_names_by_prefix_empty_prefix_returns_all() {
+        let (manager, temp) = fresh_manager("nbp_empty_prefix");
+        let config = CollectionConfig::with_dimensions(16);
+        manager.create_collection("alpha", config.clone()).unwrap();
+        manager.create_collection("beta", config).unwrap();
+
+        let names = manager.names_by_prefix("");
+        assert_eq!(names.len(), 2);
+
+        cleanup(&temp);
+    }
+
+    #[test]
+    fn test_names_by_prefix_filters_correctly() {
+        let (manager, temp) = fresh_manager("nbp_filter");
+        let config = CollectionConfig::with_dimensions(16);
+        manager.create_collection("prod-v1", config.clone()).unwrap();
+        manager.create_collection("prod-v2", config.clone()).unwrap();
+        manager.create_collection("staging-v1", config).unwrap();
+
+        let names = manager.names_by_prefix("prod");
+        assert_eq!(names.len(), 2);
+        assert!(names.iter().all(|n| n.starts_with("prod")));
+
+        cleanup(&temp);
+    }
+
+    #[test]
+    fn test_names_by_prefix_no_match_returns_empty() {
+        let (manager, temp) = fresh_manager("nbp_no_match");
+        let config = CollectionConfig::with_dimensions(16);
+        manager.create_collection("alpha", config).unwrap();
+
+        let names = manager.names_by_prefix("zzz");
+        assert!(names.is_empty());
+
+        cleanup(&temp);
+    }
+
+    #[test]
+    fn test_names_by_prefix_exact_name_matches() {
+        let (manager, temp) = fresh_manager("nbp_exact");
+        let config = CollectionConfig::with_dimensions(16);
+        manager.create_collection("exact", config).unwrap();
+
+        let names = manager.names_by_prefix("exact");
+        assert_eq!(names.len(), 1);
+        assert_eq!(names[0], "exact");
+
+        cleanup(&temp);
+    }
 
     #[test]
     fn test_full_lifecycle() -> Result<()> {

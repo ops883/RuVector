@@ -47,6 +47,15 @@ impl AppState {
             .collect()
     }
 
+    /// Get collection names whose names start with `prefix`
+    pub fn collection_names_by_prefix(&self, prefix: &str) -> Vec<String> {
+        self.collections
+            .iter()
+            .filter(|entry| entry.key().starts_with(prefix))
+            .map(|entry| entry.key().clone())
+            .collect()
+    }
+
     /// Get the number of collections
     pub fn collection_count(&self) -> usize {
         self.collections.len()
