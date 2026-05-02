@@ -628,6 +628,25 @@ impl CollectionManager {
         .map_err(|e| Error::from_reason(format!("Task failed: {}", e)))
     }
 
+    /// List collections whose names start with `prefix`
+    ///
+    /// # Example
+    /// ```javascript
+    /// const collections = await manager.listCollectionsByPrefix('prod');
+    /// console.log('Prod collections:', collections);
+    /// ```
+    #[napi]
+    pub async fn list_collections_by_prefix(&self, prefix: String) -> Result<Vec<String>> {
+        let manager = self.inner.clone();
+
+        tokio::task::spawn_blocking(move || {
+            let manager = manager.read().expect("RwLock poisoned");
+            manager.names_by_prefix(&prefix)
+        })
+        .await
+        .map_err(|e| Error::from_reason(format!("Task failed: {}", e)))
+    }
+
     /// Delete a collection
     ///
     /// # Example
